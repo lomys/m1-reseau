@@ -102,7 +102,7 @@ int main(int argc, char **argv) {
 	write(1,buffer,longueur);
     }
     
-    printf("\nfin de la reception.\n");
+    printf("\nfin de la reception.test\n");
     
     close(socket_descriptor);
     
