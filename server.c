@@ -3,16 +3,28 @@ Serveur à lancer avant le client
 ------------------------------------------------*/
 #include <stdlib.h>
 #include <stdio.h>
-#include <linux/types.h> 	/* pour les sockets */
+#include <sys/types.h> // #include <linux/types.h> 	/* pour les sockets */
 #include <sys/socket.h>
 #include <netdb.h> 		/* pour hostent, servent */
 #include <string.h> 		/* pour bcopy, ... */  
+#include <pthread.h>    /* pour les threads */
+#include <unistd.h>     /* pour fonctions sleep, read, write, close */
+
+#include "constantes.h" //pour nos constantes générales prédéfinies
+
+//constantes propres au serveur
 #define TAILLE_MAX_NOM 256
+#define NB_CONNEXIONS 5
+
 
 typedef struct sockaddr sockaddr;
 typedef struct sockaddr_in sockaddr_in;
 typedef struct hostent hostent;
 typedef struct servent servent;
+
+/* signatures des méthodes */
+void renvoi(int sock); 
+void * handler(void *socket_desc); // gestionnaire de clients après connexion au serveur
 
 /*------------------------------------------------------*/
 void renvoi (int sock) {
@@ -20,8 +32,10 @@ void renvoi (int sock) {
     char buffer[256];
     int longueur;
    
-    if ((longueur = read(sock, buffer, sizeof(buffer))) <= 0) 
-    	return;
+    if ((longueur = read(sock, buffer, sizeof(buffer))) <= 0) {
+    	printf("erreur longueur du buffer");
+        return;
+    }
     
     printf("message lu : %s \n", buffer);
     
@@ -37,9 +51,9 @@ void renvoi (int sock) {
     /* mise en attente du prgramme pour simuler un delai de transmission */
     sleep(3);
     
-    strcat(buffer,system("ls"));
-    longueur = sizeof(buffer);
-    buffer[longueur+1] ='\0';
+    // strcat(buffer,system("ls"));
+    // longueur = sizeof(buffer);
+    // buffer[longueur+1] ='\0';
     write(sock,buffer,strlen(buffer)+1);
     
     printf("message envoye. \n");
@@ -49,8 +63,43 @@ void renvoi (int sock) {
 }
 /*------------------------------------------------------*/
 
+void * handler(void *socket_desc) {
+    int sock = *(int *) socket_desc;
+    int longueur;
+    char client_buffer[BUFFER_SIZE];
+
+    //Receive a message from client
+    while( (longueur = read(sock, client_buffer, sizeof(client_buffer))) > 0 )
+    {
+    
+        //end of string marker
+        client_buffer[longueur] = '\0';
+    
+        //Send the message back to client
+        write(sock , client_buffer , strlen(client_buffer));
+    
+        //clear the message buffer
+        memset(client_buffer, 0, sizeof(client_buffer));
+    }
+
+    if(longueur == 0)
+    {
+        puts("Client déconnecté.");
+        fflush(stdout);
+    }
+    else if(longueur == -1)
+    {
+        perror("erreur : impossible de lire les messages.");
+    }
+
+    close(sock);
+    
+    pthread_exit(0);
+
+}
+
 /*------------------------------------------------------*/
-main(int argc, char **argv) {
+int main(int argc, char **argv) {
   
     int 		socket_descriptor, 		/* descripteur de socket */
 			nouv_socket_descriptor, 	/* [nouveau] descripteur de socket */
@@ -60,6 +109,7 @@ main(int argc, char **argv) {
     hostent*		ptr_hote; 			/* les infos recuperees sur la machine hote */
     servent*		ptr_service; 			/* les infos recuperees sur le service de la machine */
     char 		machine[TAILLE_MAX_NOM+1]; 	/* nom de la machine locale */
+    pthread_t client_thread;            //thread créé pour un client
     
     gethostname(machine,TAILLE_MAX_NOM);		/* recuperation du nom de la machine */
     
@@ -109,30 +159,38 @@ main(int argc, char **argv) {
     }
     
     /* initialisation de la file d'ecoute */
-    listen(socket_descriptor,5);
+    if (listen(socket_descriptor, NB_CONNEXIONS) < 0) {
+        perror("erreur : impossible d'écouter sur le socket défini");
+        exit(1);
+    }
 
     /* attente des connexions et traitement des donnees recues */
-    for(;;) {
-    
-		longueur_adresse_courante = sizeof(adresse_client_courant);
-		
+    // longueur_adresse_courante = sizeof(adresse_client_courant);
+    longueur_adresse_courante = sizeof(adresse_client_courant);
+    while(1) {
+
+        
 		/* adresse_client_courant sera renseigné par accept via les infos du connect */
-		if ((nouv_socket_descriptor = 
-			accept(socket_descriptor, 
-			       (sockaddr*)(&adresse_client_courant),
-			       &longueur_adresse_courante))
-			 < 0) {
+		if ((nouv_socket_descriptor = accept(socket_descriptor, 
+			                                 (sockaddr*)(&adresse_client_courant),
+			                                 (socklen_t*) &longueur_adresse_courante)) < 0) 
+        {
 			perror("erreur : impossible d'accepter la connexion avec le client.");
 			exit(1);
 		}
-		
-		/* traitement du message */
-		printf("reception d'un message.\n");
-		
-		renvoi(nouv_socket_descriptor);
-						
-		close(nouv_socket_descriptor);
+
+        // les actions du client sont gérées par un code à part : le handler
+        if( pthread_create( &client_thread , NULL , handler , (void*) &nouv_socket_descriptor) < 0)
+        {
+            perror("erreur : impossible de créer le thread.");
+            exit(1);
+        }
+        pthread_detach(client_thread);//pas besoin d'attendre la fin du thread
 		
     }
+
+    // close(nouv_socket_descriptor);//plus besoin, fait dans le handler
+    close(socket_descriptor);
+    return 0;
     
 }
