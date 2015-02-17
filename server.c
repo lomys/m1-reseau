@@ -68,10 +68,12 @@ void * handler(void *socket_desc) {
     int longueur;
     char client_buffer[BUFFER_SIZE];
 
+    // printf("Nouveau client : %s\n", sock)//TODO : put ip address or something
+    puts("Nouveau client.");
+
     //Receive a message from client
     while( (longueur = read(sock, client_buffer, sizeof(client_buffer))) > 0 )
     {
-    
         //end of string marker
         client_buffer[longueur] = '\0';
     
@@ -169,7 +171,6 @@ int main(int argc, char **argv) {
     longueur_adresse_courante = sizeof(adresse_client_courant);
     while(1) {
 
-        
 		/* adresse_client_courant sera renseigné par accept via les infos du connect */
 		if ((nouv_socket_descriptor = accept(socket_descriptor, 
 			                                 (sockaddr*)(&adresse_client_courant),
