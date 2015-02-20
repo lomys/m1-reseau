@@ -11,6 +11,14 @@ Fonctionnement
 * Un serveur gère les requêtes
 * Le client est un outil avec des fonctionnalités disponibles via un menu
 
+### Fonctionnalités attendues
+	* Envoyer un fichier à distance
+	* Récupérer un fichier distant
+	* Supprimer un fichier distant
+	* Lister les fichiers à distance
+	* Créer des répertoires distants
+	* Déplacer un fichier distant
+
 Contraintes
 -----------
 * Programme ne fonctionnant qu'avec des systèmes UNIX
