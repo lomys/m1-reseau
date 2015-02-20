@@ -9,6 +9,7 @@ client <adresse-serveur> <message-a-transmettre>
 #include <netdb.h>
 #include <string.h>
 #include <unistd.h>     /* pour fonctions sleep, read, write, close */
+#include <stdbool.h>    /* pour booléens */
 
 #include "constantes.h" //pour nos constantes générales prédéfinies
 
@@ -17,6 +18,84 @@ typedef struct sockaddr_in 	sockaddr_in;
 typedef struct hostent 		hostent;
 typedef struct servent 		servent;
 
+/**
+ *
+ */
+void envoyer() {
+
+}
+
+/**
+ *
+ */
+void recuperer() {
+
+}
+
+/**
+ *
+ */
+void supprimer() {
+
+}
+
+/**
+ *
+ */
+void lister() {
+    
+
+}
+
+/**
+ *
+ */
+void creerRep() {
+
+}
+
+/**
+ *
+ */
+void deplacer() {
+
+}
+
+/**
+ * procédure pour afficher le menu.
+ */
+void afficher_menu() {
+    puts("");
+    puts("--- MENU ---");
+    puts("0 - Quitter");
+    puts("1 - Envoyer un fichier");
+    puts("2 - Récupérer un fichier");
+    puts("3 - Supprimer un fichier");
+    puts("4 - Lister les fichiers distants");
+    puts("5 - Créer un répertoire");
+    puts("6 - Déplacer un fichier");
+    puts("");
+}
+
+/**
+ * fonction affichant le menu et qui retourne la fonctionnalité souhaité
+ *
+ * @return entier "choix" représentant la fonctionnalité à effectuer
+ */
+int menu() {
+    int choix;
+
+    do {
+        afficher_menu();
+        scanf("%d", &choix);
+    } while(choix<0 || choix>6);
+
+    return choix;
+}
+
+/**
+ * Fonction principale qui lance le client.
+ */
 int main(int argc, char **argv) {
 
     int socket_descriptor, 	/* descripteur de socket */
@@ -28,6 +107,8 @@ int main(int argc, char **argv) {
     char *	prog; 			/* nom du programme */
     char *	host; 			/* nom de la machine distante */
     char mesg[BUFFER_SIZE]; 			/* message envoyé */
+    int choix; //choix de la fonctionnalité dans le menu
+    bool stop; // condition d'arrêt de l'app
 
     if (argc != 2) {
         perror("usage : client <adresse-serveur>");
@@ -84,29 +165,67 @@ adresse_locale.sin_family = AF_INET; /* ou ptr_host->h_addrtype; */
 
     printf("connexion etablie avec le serveur. \n");
 
-    while(1) {
-        printf("\nMessage : ");
-        fgets(mesg, sizeof(mesg), stdin);
-        mesg[strlen(mesg)] = '\0';
-        printf("envoi d'un message au serveur. \n");
-
-        //TODO : put a stop message
-        /* envoi du message vers le serveur */
-        if ((write(socket_descriptor, mesg, strlen(mesg))) < 0) {
-            perror("erreur : impossible d'ecrire le message destine au serveur.");
-            exit(1);
+    /*******************
+     * Fonctionnalités *
+     *******************/
+    stop = false;
+    while(!stop) {
+        choix = menu();
+        //condition arrêtant le programme si l'utilisateur fait une mauvaise saisie
+        if( !choix ) {
+            break;
         }
 
-        /* mise en attente du prgramme pour simuler un delai de transmission */
-        sleep(2);
+        switch(choix) {
+            case 1:
+                envoyer();
+                break;
 
-        printf("message envoye au serveur. \n");
+            case 2:
+                recuperer();
+                break;
 
-        /* lecture de la reponse en provenance du serveur */
-        if((longueur = read(socket_descriptor, buffer, sizeof(buffer))) > 0) {
-            printf("reponse du serveur : \n");
-            write(1,buffer,longueur);
+            case 3:
+                supprimer();
+                break;
+
+            case 4:
+                lister();
+                break;
+
+            case 5:
+                creerRep();
+                break;
+
+            case 6:
+                deplacer();
+                break;
+
+            default:
+                stop = true;
+                break;
         }
+        // printf("\nMessage : ");
+        // mesg[strlen(mesg)] = '\0';
+        // printf("envoi d'un message au serveur. \n");
+
+        
+        // /* envoi du message vers le serveur */
+        // if ((write(socket_descriptor, mesg, strlen(mesg))) < 0) {
+        //     perror("erreur : impossible d'ecrire le message destine au serveur.");
+        //     exit(1);
+        // }
+
+        // /* mise en attente du prgramme pour simuler un delai de transmission */
+        // sleep(2);
+
+        // printf("message envoye au serveur. \n");
+
+        // /* lecture de la reponse en provenance du serveur */
+        // if((longueur = read(socket_descriptor, buffer, sizeof(buffer))) > 0) {
+        //     printf("reponse du serveur : \n");
+        //     write(1,buffer,longueur);
+        // }
     }
 
     puts("\nfin de la reception.");
