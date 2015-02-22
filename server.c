@@ -9,6 +9,7 @@ Serveur à lancer avant le client
 #include <string.h> 		/* pour bcopy, ... */  
 #include <pthread.h>    /* pour les threads */
 #include <unistd.h>     /* pour fonctions sleep, read, write, close */
+#include <arpa/inet.h>  /* pour fonction inet_ntoa */
 
 #include "constantes.h" //pour nos constantes générales prédéfinies
 
@@ -21,6 +22,10 @@ typedef struct sockaddr sockaddr;
 typedef struct sockaddr_in sockaddr_in;
 typedef struct hostent hostent;
 typedef struct servent servent;
+typedef struct {
+    int * socket_desc;
+    char * adresse_ip;
+} thread_params;
 
 /* signatures des méthodes */
 void renvoi(int sock); 
@@ -63,13 +68,14 @@ void renvoi (int sock) {
 }
 /*------------------------------------------------------*/
 
-void * handler(void *socket_desc) {
-    int sock = *(int *) socket_desc;
+void * handler(void *args) {
+    thread_params * params = args;
+    int sock = *(int *) params->socket_desc;
+    char * adresse_ip = (char *) params->adresse_ip;
     int longueur;
     char client_buffer[BUFFER_SIZE];
 
-    // printf("Nouveau client : %s\n", sock)//TODO : put ip address or something
-    puts("Nouveau client.");
+    printf("Nouveau client : %s\n", adresse_ip);
 
     //Receive a message from client
     while( (longueur = read(sock, client_buffer, sizeof(client_buffer))) > 0 )
@@ -77,6 +83,7 @@ void * handler(void *socket_desc) {
         //end of string marker
         client_buffer[longueur] = '\0';
     
+        // execvp("ls", "ls", NULL);test
         //Send the message back to client
         write(sock , client_buffer , strlen(client_buffer));
     
@@ -86,14 +93,13 @@ void * handler(void *socket_desc) {
 
     if(longueur == 0)
     {
-        puts("Client déconnecté.");
+        printf("Client déconnecté : %s", adresse_ip);
         fflush(stdout);
     }
     else if(longueur == -1)
     {
         perror("erreur : impossible de lire les messages.");
     }
-
     close(sock);
     
     pthread_exit(0);
@@ -112,6 +118,9 @@ int main(int argc, char **argv) {
     servent*		ptr_service; 			/* les infos recuperees sur le service de la machine */
     char 		machine[TAILLE_MAX_NOM+1]; 	/* nom de la machine locale */
     pthread_t client_thread;            //thread créé pour un client
+    thread_params params;               //paramètres du thread
+    char adresse_ip[INET_ADDRSTRLEN];   //adresse ip du client
+    
     
     gethostname(machine,TAILLE_MAX_NOM);		/* recuperation du nom de la machine */
     
@@ -167,7 +176,6 @@ int main(int argc, char **argv) {
     }
 
     /* attente des connexions et traitement des donnees recues */
-    // longueur_adresse_courante = sizeof(adresse_client_courant);
     longueur_adresse_courante = sizeof(adresse_client_courant);
     while(1) {
 
@@ -179,9 +187,13 @@ int main(int argc, char **argv) {
 			perror("erreur : impossible d'accepter la connexion avec le client.");
 			exit(1);
 		}
-
+        //récupération de l'addresse IPv4
+        inet_ntop(AF_INET, &adresse_client_courant.sin_addr, adresse_ip, INET_ADDRSTRLEN);
+        //initialisation des paramètres du thread
+        params.socket_desc = &nouv_socket_descriptor;
+        params.adresse_ip = &adresse_ip[0];
         // les actions du client sont gérées par un code à part : le handler
-        if( pthread_create( &client_thread , NULL , handler , (void*) &nouv_socket_descriptor) < 0)
+        if( pthread_create( &client_thread , NULL , handler , (void *) &params) < 0)
         {
             perror("erreur : impossible de créer le thread.");
             exit(1);
