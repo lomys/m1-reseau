@@ -81,28 +81,53 @@ void * handler(void *args) {
     while( (longueur = read(sock, client_buffer, sizeof(client_buffer))) > 0 )
     {
         //end of string marker
-        client_buffer[longueur] = '\0';
-    
+        // client_buffer[longueur] = '\0';
         //traite la commande
         if(strcmp(client_buffer, "1") == 0) { //réception d'un fichier
-            
-        } else if(strcmp(client_buffer, "2")) {
+            printf("\nRéception d'un fichier envoyé par %s\n", adresse_ip);
+            memset(client_buffer, 0, sizeof(client_buffer));
 
-        } else if(strcmp(client_buffer, "3")) {
+        } else if(strcmp(client_buffer, "2") == 0) { //envoi d'un fichier
+            printf("\nEnvoi d'un fichier à %s\n", adresse_ip);
+            memset(client_buffer, 0, sizeof(client_buffer));
+
+        } else if(strcmp(client_buffer, "3") == 0) { //rm
+            printf("\nSuppression d'un fichier par %s\n", adresse_ip);
+            memset(client_buffer, 0, sizeof(client_buffer));
+
+        } else if(strcmp(client_buffer, "4") == 0) { //ls
+            printf("\nExécution de la commande 'ls' par %s\n", adresse_ip);
+            memset(client_buffer, 0, sizeof(client_buffer));
             
-        } else if(strcmp(client_buffer, "4")) {
+            //exécution de la commande
+            FILE * fp;
+            char test[BUFFER_SIZE];
+            fp = popen("ls -lh .", "r");//la fonction popen permet de récupérer l'output de la commande grâce à un pipe
+            if(!fp) {
+                strcpy(client_buffer, "error : impossible de lister les fichiers");
+                perror("error : impossible de lister les fichiers");
+            } else {
+                //lecture du pipe
+                while( fgets(test, BUFFER_SIZE, fp) != NULL ){
+                    strcat(client_buffer, test);
+                }
+                pclose(fp);
+            }
             
-        } else if(strcmp(client_buffer, "5")) {
-            
-        } else if(strcmp(client_buffer, "6")) {
-            
+            //envoi du résultat au client
+            write(sock, client_buffer, strlen(client_buffer));
+        } else if(strcmp(client_buffer, "5") == 0) { //mkdir
+            printf("\nCréation d'un dossier par %s\n", adresse_ip);
+            memset(client_buffer, 0, sizeof(client_buffer));
+
+        } else if(strcmp(client_buffer, "6") == 0) { //mv
+            printf("\nDéplacement d'un fichier par %s\n", adresse_ip);
+            memset(client_buffer, 0, sizeof(client_buffer));
+
         } else  {
             printf("Client déconnecté : %s\n", adresse_ip);
             break;
         }
-
-        // write(sock , client_buffer , strlen(client_buffer));
-    
         //clear the message buffer
         memset(client_buffer, 0, sizeof(client_buffer));
     }
@@ -219,7 +244,6 @@ int main(int argc, char **argv) {
 		
     }
 
-    // close(nouv_socket_descriptor);//plus besoin, fait dans le handler
     close(socket_descriptor);
     return 0;
     

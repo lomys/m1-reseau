@@ -216,23 +216,23 @@ adresse_locale.sin_family = AF_INET; /* ou ptr_host->h_addrtype; */
         // printf("envoi d'un message au serveur. \n");
         
         // pour tester, mettre quelque chose ici.
-        strcpy(mesg, "0\0");
+        strcpy(mesg, "4\0");
         /* envoi du message vers le serveur */
         if ((write(socket_descriptor, mesg, strlen(mesg))) < 0) {
             perror("erreur : impossible d'ecrire le message destine au serveur.");
             exit(1);
         }
 
-        // /* mise en attente du prgramme pour simuler un delai de transmission */
-        // sleep(2);
+        /* mise en attente du prgramme pour simuler un delai de transmission */
+        sleep(1);
 
-        // printf("message envoye au serveur. \n");
+        printf("message envoye au serveur. \n");
 
-        // /* lecture de la reponse en provenance du serveur */
-        // if((longueur = read(socket_descriptor, buffer, sizeof(buffer))) > 0) {
-        //     printf("reponse du serveur : \n");
-        //     write(1,buffer,longueur);
-        // }
+        /* lecture de la reponse en provenance du serveur */
+        if((longueur = read(socket_descriptor, buffer, sizeof(buffer))) > 0) {
+            printf("reponse du serveur : \n");
+            write(1,buffer,longueur);
+        }
     }
 
     puts("\nfin de la reception.");
