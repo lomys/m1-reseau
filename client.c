@@ -36,7 +36,20 @@ void recuperer() {
  *
  */
 void supprimer(int socket_descriptor) {
+    char buffer[BUFFER_SIZE];
+    int longueur;
 
+    puts("Quel chemin ?");
+    scanf("%s", buffer);
+    buffer[strlen(buffer)] = '\0';
+    if ((write(socket_descriptor, buffer, strlen(buffer))) < 0) {
+        perror("erreur : impossible d'ecrire le message destine au serveur.");
+        exit(0);
+    }
+    if((longueur = read(socket_descriptor, buffer, sizeof(buffer))) > 0) {
+        printf("reponse du serveur : \n");
+        write(1,buffer,longueur);
+    }
 }
 
 /**
@@ -73,10 +86,6 @@ void creerRep(int socket_descriptor) {
 
     puts("Quel chemin ?");
     scanf("%s", buffer);
-    // if(strcmp(buffer, "/") == 0) {
-    //     puts("Chemin interdit, remplacé par .");//bug si accès à la racine
-    //     strcpy(buffer, ".");
-    // }
     buffer[strlen(buffer)] = '\0';
     if ((write(socket_descriptor, buffer, strlen(buffer))) < 0) {
         perror("erreur : impossible d'ecrire le message destine au serveur.");

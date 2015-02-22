@@ -97,6 +97,20 @@ void * handler(void *args) {
             printf("\nSuppression d'un fichier par %s\n", adresse_ip);
             memset(client_buffer, 0, sizeof(client_buffer));
 
+            //lecture du path
+            read(sock, path, sizeof(path));
+
+            //exécution de la commande
+            char cmd[PATH_LIMIT+7];
+            strcpy(cmd, "rm -fr ");
+            strcat(cmd, path);
+            printf("%s\n", cmd);
+            system(cmd);
+            strcpy(client_buffer, "Fichier(s) supprimé(s).");
+            
+            //envoi du résultat au client
+            write(sock, client_buffer, strlen(client_buffer));   
+
         } else if(strcmp(client_buffer, "4") == 0) { //ls
             printf("\nExécution de la commande 'ls' par %s\n", adresse_ip);
             memset(client_buffer, 0, sizeof(client_buffer));
@@ -130,7 +144,7 @@ void * handler(void *args) {
             
             //envoi du résultat au client
             write(sock, client_buffer, strlen(client_buffer));
-            
+
         } else if(strcmp(client_buffer, "5") == 0) { //mkdir
             printf("\nCréation d'un dossier par %s\n", adresse_ip);
             memset(client_buffer, 0, sizeof(client_buffer));
