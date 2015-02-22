@@ -15,7 +15,7 @@ Serveur à lancer avant le client
 
 //constantes propres au serveur
 #define TAILLE_MAX_NOM 256
-#define NB_CONNEXIONS 5
+#define NB_CONNEXIONS 5 //ne devrait pas dépasser 5
 
 
 typedef struct sockaddr sockaddr;
@@ -77,15 +77,31 @@ void * handler(void *args) {
 
     printf("Nouveau client : %s\n", adresse_ip);
 
-    //Receive a message from client
+    //Receive command from client
     while( (longueur = read(sock, client_buffer, sizeof(client_buffer))) > 0 )
     {
         //end of string marker
         client_buffer[longueur] = '\0';
     
-        // execvp("ls", "ls", NULL);test
-        //Send the message back to client
-        write(sock , client_buffer , strlen(client_buffer));
+        //traite la commande
+        if(strcmp(client_buffer, "1") == 0) { //réception d'un fichier
+            
+        } else if(strcmp(client_buffer, "2")) {
+
+        } else if(strcmp(client_buffer, "3")) {
+            
+        } else if(strcmp(client_buffer, "4")) {
+            
+        } else if(strcmp(client_buffer, "5")) {
+            
+        } else if(strcmp(client_buffer, "6")) {
+            
+        } else  {
+            printf("Client déconnecté : %s\n", adresse_ip);
+            break;
+        }
+
+        // write(sock , client_buffer , strlen(client_buffer));
     
         //clear the message buffer
         memset(client_buffer, 0, sizeof(client_buffer));
@@ -93,7 +109,7 @@ void * handler(void *args) {
 
     if(longueur == 0)
     {
-        printf("Client déconnecté : %s", adresse_ip);
+        printf("Client déconnecté : %s\n", adresse_ip);
         fflush(stdout);
     }
     else if(longueur == -1)
@@ -123,6 +139,7 @@ int main(int argc, char **argv) {
     
     
     gethostname(machine,TAILLE_MAX_NOM);		/* recuperation du nom de la machine */
+    //TODO : get real ip and print it
     
     /* recuperation de la structure d'adresse en utilisant le nom */
     if ((ptr_hote = gethostbyname(machine)) == NULL) {

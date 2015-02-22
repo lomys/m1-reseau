@@ -89,6 +89,7 @@ int menu() {
         afficher_menu();
         scanf("%d", &choix);
     } while(choix<0 || choix>6);
+    //TODO : bug si choix autre que chiffre
 
     return choix;
 }
@@ -177,9 +178,9 @@ adresse_locale.sin_family = AF_INET; /* ou ptr_host->h_addrtype; */
     while(!stop) {
         choix = menu();
         //condition arrêtant le programme si l'utilisateur fait une mauvaise saisie
-        if( !choix ) {
-            break;
-        }
+        // if( !choix ) {
+        //     break;
+        // }
 
         switch(choix) {
             case 1:
@@ -213,13 +214,14 @@ adresse_locale.sin_family = AF_INET; /* ou ptr_host->h_addrtype; */
         // printf("\nMessage : ");
         // mesg[strlen(mesg)] = '\0';
         // printf("envoi d'un message au serveur. \n");
-
         
-        // /* envoi du message vers le serveur */
-        // if ((write(socket_descriptor, mesg, strlen(mesg))) < 0) {
-        //     perror("erreur : impossible d'ecrire le message destine au serveur.");
-        //     exit(1);
-        // }
+        // pour tester, mettre quelque chose ici.
+        strcpy(mesg, "0\0");
+        /* envoi du message vers le serveur */
+        if ((write(socket_descriptor, mesg, strlen(mesg))) < 0) {
+            perror("erreur : impossible d'ecrire le message destine au serveur.");
+            exit(1);
+        }
 
         // /* mise en attente du prgramme pour simuler un delai de transmission */
         // sleep(2);
