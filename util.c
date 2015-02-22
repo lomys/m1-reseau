@@ -3,10 +3,10 @@
 ------------------------------------------------------------*/
 #include <stdlib.h>
 #include <stdio.h>
-#include <linux/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <string.h>
+#define TAILLE_MAX 10
 
 typedef struct sockaddr 	sockaddr;
 typedef struct sockaddr_in 	sockaddr_in;
@@ -18,27 +18,28 @@ char *	lire_fichier(char * path){
     FILE* fichier = NULL;
     fichier = fopen(path,"r");
     int caractereActuel = 0;
-    char * res ;
-    const char * valeur;
+    char * res ="" ;
+    char chaine[TAILLE_MAX] = "";
+    int i = 1;
     if (fichier != NULL){
-        do
+        while (fgets(chaine, TAILLE_MAX, fichier) != NULL) // On lit le fichier tant qu'on ne reçoit pas d'erreur (NULL)
+
         {
-            caractereActuel = fgetc(fichier); // On lit le caractère
-            valeur = (char)caractereActuel;
-            strcpy(res,"test");
-            strcat(res, valeur);// On le place dans le buffer
-        } while (caractereActuel != EOF); // On continue tant que fgetc n'a pas retourné EOF (fin de fichier)
+
+            printf("%d %s\n", i,chaine); // On affiche la chaîne qu'on vient de lire
+            i++;
+        }
  
         fclose(fichier);
     }else{
-        printf("Impossible d'ouvrir le fichier.");
+        printf("Impossible d'ouvrir le fichier.\n");
     }
     return res;
 } 
 
 int main(int argc, char **argv) {
   
-    printf("%s",lire_fichier("fichier.txt"));
+    printf("%s\n",lire_fichier("fichier.txt"));
     exit(0);
     
 }

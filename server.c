@@ -3,7 +3,7 @@ Serveur à lancer avant le client
 ------------------------------------------------*/
 #include <stdlib.h>
 #include <stdio.h>
-#include <linux/types.h> 	/* pour les sockets */
+
 #include <sys/socket.h>
 #include <netdb.h> 		/* pour hostent, servent */
 #include <string.h> 		/* pour bcopy, ... */  
@@ -13,6 +13,19 @@ typedef struct sockaddr sockaddr;
 typedef struct sockaddr_in sockaddr_in;
 typedef struct hostent hostent;
 typedef struct servent servent;
+
+
+void analyse (int sock){
+    char buffer[256];
+    int longueur;
+    if ((longueur = read(sock, buffer, sizeof(buffer))) <= 0) 
+        return;
+    
+    if (buffer[0] == '1'){
+        reception_fichier(nom , nb_buffer)
+    }
+
+}
 
 /*------------------------------------------------------*/
 void renvoi (int sock) {
