@@ -35,7 +35,7 @@ void recuperer() {
 /**
  *
  */
-void supprimer() {
+void supprimer(int socket_descriptor) {
 
 }
 
@@ -46,11 +46,6 @@ void lister(int socket_descriptor) {
     char buffer[BUFFER_SIZE];
     int longueur;
 
-    strcpy(buffer, "4\0");
-    if ((write(socket_descriptor, buffer, strlen(buffer))) < 0) {
-        perror("erreur : impossible d'ecrire le message destine au serveur.");
-        exit(0);
-    }
     puts("Quel chemin ?");
     scanf("%s", buffer);
     if(strcmp(buffer, "/") == 0) {
@@ -72,14 +67,31 @@ void lister(int socket_descriptor) {
 /**
  *
  */
-void creerRep() {
+void creerRep(int socket_descriptor) {
+    char buffer[BUFFER_SIZE];
+    int longueur;
 
+    puts("Quel chemin ?");
+    scanf("%s", buffer);
+    // if(strcmp(buffer, "/") == 0) {
+    //     puts("Chemin interdit, remplacé par .");//bug si accès à la racine
+    //     strcpy(buffer, ".");
+    // }
+    buffer[strlen(buffer)] = '\0';
+    if ((write(socket_descriptor, buffer, strlen(buffer))) < 0) {
+        perror("erreur : impossible d'ecrire le message destine au serveur.");
+        exit(0);
+    }
+    if((longueur = read(socket_descriptor, buffer, sizeof(buffer))) > 0) {
+        printf("reponse du serveur : \n");
+        write(1,buffer,longueur);
+    }
 }
 
 /**
  *
  */
-void deplacer() {
+void deplacer(int socket_descriptor) {
 
 }
 
@@ -214,19 +226,39 @@ adresse_locale.sin_family = AF_INET; /* ou ptr_host->h_addrtype; */
                 break;
 
             case 3:
-                supprimer();
+                strcpy(buffer, "3\0");
+                if ((write(socket_descriptor, buffer, strlen(buffer))) < 0) {
+                    perror("erreur : impossible d'ecrire le message destine au serveur.");
+                    break;
+                }
+                supprimer(socket_descriptor);
                 break;
 
             case 4:
+                strcpy(buffer, "4\0");
+                if ((write(socket_descriptor, buffer, strlen(buffer))) < 0) {
+                    perror("erreur : impossible d'ecrire le message destine au serveur.");
+                    break;
+                }
                 lister(socket_descriptor);
                 break;
 
             case 5:
-                creerRep();
+                strcpy(buffer, "5\0");
+                if ((write(socket_descriptor, buffer, strlen(buffer))) < 0) {
+                    perror("erreur : impossible d'ecrire le message destine au serveur.");
+                    break;
+                }
+                creerRep(socket_descriptor);
                 break;
 
             case 6:
-                deplacer();
+                strcpy(buffer, "6\0");
+                if ((write(socket_descriptor, buffer, strlen(buffer))) < 0) {
+                    perror("erreur : impossible d'ecrire le message destine au serveur.");
+                    break;
+                }
+                deplacer(socket_descriptor);
                 break;
 
             default:
