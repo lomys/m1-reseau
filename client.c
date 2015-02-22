@@ -101,7 +101,23 @@ void creerRep(int socket_descriptor) {
  *
  */
 void deplacer(int socket_descriptor) {
+    char buffer[BUFFER_SIZE];
+    int longueur;
+    char temp[PATH_LIMIT];
 
+    puts("Indiquer le fichier à déplacer puis, séparé d'un espace, sa destination.");
+    scanf("%s %s", buffer, temp);
+    strcat(buffer, " ");
+    strcat(buffer, temp);
+    buffer[strlen(buffer)] = '\0';
+    if ((write(socket_descriptor, buffer, strlen(buffer))) < 0) {
+        perror("erreur : impossible d'ecrire le message destine au serveur.");
+        exit(0);
+    }
+    if((longueur = read(socket_descriptor, buffer, sizeof(buffer))) > 0) {
+        printf("reponse du serveur : \n");
+        write(1,buffer,longueur);
+    }
 }
 
 /**
