@@ -197,6 +197,26 @@ adresse_locale.sin_family = AF_INET; /* ou ptr_host->h_addrtype; */
 
             case 4:
                 lister();
+                strcpy(buffer, "4\0");
+                if ((write(socket_descriptor, buffer, strlen(buffer))) < 0) {
+                    perror("erreur : impossible d'ecrire le message destine au serveur.");
+                    break;
+                }
+                puts("Quel chemin ?");
+                scanf("%s", buffer);
+                if(strcmp(buffer, "/") == 0) {
+                    puts("Chemin interdit, remplacé par .");//bug si accès à la racine
+                    strcpy(buffer, ".");
+                }
+                buffer[strlen(buffer)] = '\0';
+                if ((write(socket_descriptor, buffer, strlen(buffer))) < 0) {
+                    perror("erreur : impossible d'ecrire le message destine au serveur.");
+                    break;
+                }
+                if((longueur = read(socket_descriptor, buffer, sizeof(buffer))) > 0) {
+                    printf("reponse du serveur : \n");
+                    write(1,buffer,longueur);
+                }
                 break;
 
             case 5:
@@ -211,28 +231,7 @@ adresse_locale.sin_family = AF_INET; /* ou ptr_host->h_addrtype; */
                 stop = true;
                 break;
         }
-        // printf("\nMessage : ");
-        // mesg[strlen(mesg)] = '\0';
-        // printf("envoi d'un message au serveur. \n");
-        
-        // pour tester, mettre quelque chose ici.
-        strcpy(mesg, "4\0");
-        /* envoi du message vers le serveur */
-        if ((write(socket_descriptor, mesg, strlen(mesg))) < 0) {
-            perror("erreur : impossible d'ecrire le message destine au serveur.");
-            exit(1);
-        }
-
-        /* mise en attente du prgramme pour simuler un delai de transmission */
-        sleep(1);
-
-        printf("message envoye au serveur. \n");
-
-        /* lecture de la reponse en provenance du serveur */
-        if((longueur = read(socket_descriptor, buffer, sizeof(buffer))) > 0) {
-            printf("reponse du serveur : \n");
-            write(1,buffer,longueur);
-        }
+        memset(buffer, 0, sizeof(buffer));
     }
 
     puts("\nfin de la reception.");

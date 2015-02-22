@@ -74,6 +74,8 @@ void * handler(void *args) {
     char * adresse_ip = (char *) params->adresse_ip;
     int longueur;
     char client_buffer[BUFFER_SIZE];
+    int status; //statut pour la fonction popen
+    char path[PATH_LIMIT];
 
     printf("Nouveau client : %s\n", adresse_ip);
 
@@ -99,19 +101,31 @@ void * handler(void *args) {
             printf("\nExécution de la commande 'ls' par %s\n", adresse_ip);
             memset(client_buffer, 0, sizeof(client_buffer));
             
+            //lecture du path
+            read(sock, path, sizeof(path));
+            // printf("path : %s\n", path);
+
             //exécution de la commande
             FILE * fp;
-            char test[BUFFER_SIZE];
-            fp = popen("ls -lh .", "r");//la fonction popen permet de récupérer l'output de la commande grâce à un pipe
+            char pipe[BUFFER_SIZE];
+            char cmd[PATH_LIMIT+6];
+            strcpy(cmd, "ls -lh ");
+            strcat(cmd, path);
+            printf("%s\n", cmd);
+            fp = popen(cmd, "r");//la fonction popen permet de récupérer l'output de la commande grâce à un pipe
             if(!fp) {
-                strcpy(client_buffer, "error : impossible de lister les fichiers");
+                strcpy(client_buffer, "error : impossible de lister les fichiers\0");
                 perror("error : impossible de lister les fichiers");
             } else {
                 //lecture du pipe
-                while( fgets(test, BUFFER_SIZE, fp) != NULL ){
-                    strcat(client_buffer, test);
+                while( fgets(pipe, BUFFER_SIZE, fp) != NULL ){
+                    strcat(client_buffer, pipe);
                 }
-                pclose(fp);
+                status = pclose(fp);
+                if(status > 0) {
+                    strcpy(client_buffer, "error : impossible de lister les fichiers\0");
+                    perror("error : impossible de lister les fichiers");
+                }
             }
             
             //envoi du résultat au client
@@ -130,6 +144,7 @@ void * handler(void *args) {
         }
         //clear the message buffer
         memset(client_buffer, 0, sizeof(client_buffer));
+        memset(path, 0, sizeof(path));
     }
 
     if(longueur == 0)
