@@ -110,6 +110,7 @@ int main(int argc, char **argv) {
     int choix; //choix de la fonctionnalité dans le menu
     bool stop; // condition d'arrêt de l'app
 
+    //vérification du nombre d'arguments
     if (argc != 2) {
         perror("usage : client <adresse-serveur>");
         exit(1);
@@ -121,6 +122,10 @@ int main(int argc, char **argv) {
     printf("nom de l'executable : %s \n", prog);
     printf("adresse du serveur  : %s \n", host);
 
+
+    /****************************************
+     * Initialisation des paramètres réseau *
+     ****************************************/
     if ((ptr_host = gethostbyname(host)) == NULL) {
         perror("erreur : impossible de trouver le serveur a partir de son adresse.");
         exit(1);
