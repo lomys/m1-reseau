@@ -18,22 +18,34 @@ typedef struct sockaddr_in 	sockaddr_in;
 typedef struct hostent 		hostent;
 typedef struct servent 		servent;
 
+
+/* signatures des méthodes */
+void envoyer();
+void recuperer();
+void supprimer(int socket_descriptor);
+void lister(int socket_descriptor);
+void creerRep(int socket_descriptor);
+void deplacer(int socket_descriptor);
+void afficher_menu();
+int menu();
+int main(int argc, char **argv);
+
 /**
- *
+ * Procédure appelée pour envoyer un fichier sur le serveur
  */
 void envoyer() {
 
 }
 
 /**
- *
+ * Procédure appelée pour réceptionner un fichier du serveur
  */
 void recuperer() {
 
 }
 
 /**
- *
+ * Procédure appelée pour supprimer un fichier ou un répertoire distant
  */
 void supprimer(int socket_descriptor) {
     char buffer[BUFFER_SIZE];
@@ -53,7 +65,7 @@ void supprimer(int socket_descriptor) {
 }
 
 /**
- *
+ * Procédure appelée pour lister les fichiers d'un chemin d'accès distant
  */
 void lister(int socket_descriptor) {
     char buffer[BUFFER_SIZE];
@@ -78,7 +90,7 @@ void lister(int socket_descriptor) {
 }
 
 /**
- *
+ * Procédure appelée pour créer un répertoire ou une suite de répertoires sur le serveur
  */
 void creerRep(int socket_descriptor) {
     char buffer[BUFFER_SIZE];
@@ -98,7 +110,7 @@ void creerRep(int socket_descriptor) {
 }
 
 /**
- *
+ * Procédure appelée pour déplacer un fichier du serveur
  */
 void deplacer(int socket_descriptor) {
     char buffer[BUFFER_SIZE];

@@ -28,44 +28,9 @@ typedef struct {
 } thread_params;
 
 /* signatures des méthodes */
-void renvoi(int sock); 
 void * handler(void *socket_desc); // gestionnaire de clients après connexion au serveur
+int main(int argc, char **argv); //fonction principale
 
-/*------------------------------------------------------*/
-void renvoi (int sock) {
-
-    char buffer[256];
-    int longueur;
-   
-    if ((longueur = read(sock, buffer, sizeof(buffer))) <= 0) {
-    	printf("erreur longueur du buffer");
-        return;
-    }
-    
-    printf("message lu : %s \n", buffer);
-    
-    buffer[0] = 'R';
-    buffer[1] = 'E';
-    buffer[longueur] = '#';
-    buffer[longueur+1] ='\0';
-    
-    printf("message apres traitement : %s \n", buffer);
-    
-    printf("renvoi du message traite.\n");
-
-    /* mise en attente du prgramme pour simuler un delai de transmission */
-    sleep(3);
-    
-    // strcat(buffer,system("ls"));
-    // longueur = sizeof(buffer);
-    // buffer[longueur+1] ='\0';
-    write(sock,buffer,strlen(buffer)+1);
-    
-    printf("message envoye. \n");
-        
-    return;
-    
-}
 /*------------------------------------------------------*/
 
 void * handler(void *args) {
