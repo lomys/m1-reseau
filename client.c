@@ -12,6 +12,7 @@ client <adresse-serveur> <message-a-transmettre>
 #include <stdbool.h>    /* pour booléens */
 
 #include "constantes.h" //pour nos constantes générales prédéfinies
+#define TAILLE_MAX 10
 
 typedef struct sockaddr 	sockaddr;
 typedef struct sockaddr_in 	sockaddr_in;
@@ -19,10 +20,60 @@ typedef struct hostent 		hostent;
 typedef struct servent 		servent;
 
 /**
- *
+ * procédure pour envoyer un fichier
  */
-void envoyer() {
+void envoyer(int socket_descriptor) {
+    char path[50];
+    printf("Entrer le nom du fichier \n");
+    scanf("%s", path);
+    write(socket_descriptor, path, sizeof(path));
 
+    FILE* fichier= NULL;
+    fichier = fopen(path,"rb");
+    char * res ;
+    char chaine[TAILLE_MAX];
+    int m,position_actuel;
+    int fin = 0;
+    if (fichier != NULL){
+         // On lit le fichier tant qu'on ne reçoit pas d'erreur (NULL)        
+        while(fin == 0) 
+        {
+            position_actuel = ftell(fichier);
+            //printf("position_actuel : %d\n",position_actuel);
+            fseek(fichier, 0, SEEK_END);
+            m = ftell(fichier);
+            fseek(fichier, 0, SEEK_SET);
+            
+            if(m - position_actuel > TAILLE_MAX){
+                //printf("%s\n","boucle 1");
+                fseek(fichier,position_actuel,SEEK_CUR);
+                res = malloc((sizeof(char)) * position_actuel+TAILLE_MAX);
+                position_actuel = position_actuel + TAILLE_MAX;
+                //printf("position_actuel : %d\n",position_actuel);
+                //printf("position final : %d\n",m);
+                fread(res, TAILLE_MAX, 1, fichier);
+                printf("affichage : %s\n",res);
+                //printf("pos : %d\n",ftell(fichier));
+
+            }else{
+                //printf("%s\n","boucle 2");
+                fin = 1;         
+                res = malloc((sizeof(char)) * m-position_actuel);
+                //printf("%d\n",m-position_actuel);
+                fseek(fichier, position_actuel, SEEK_CUR);
+                fread(res, m-position_actuel, 1, fichier);
+                //printf("Affichage : %s\n",res);
+                //fwrite(res,1,m-position_actuel,fp);
+                //printf("%s\n","test");                
+            }
+            //sleep(2);
+            //op1[m]='/0';
+            //write(socket_descriptor, res, m);
+        }
+        fclose(fichier);
+    }else{
+        printf("Impossible d'ouvrir le fichier.\n");
+    }
 }
 
 /**
@@ -184,7 +235,7 @@ adresse_locale.sin_family = AF_INET; /* ou ptr_host->h_addrtype; */
 
         switch(choix) {
             case 1:
-                envoyer();
+                envoyer(socket_descriptor);
                 break;
 
             case 2:
