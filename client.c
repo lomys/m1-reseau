@@ -19,8 +19,20 @@ typedef struct sockaddr_in 	sockaddr_in;
 typedef struct hostent 		hostent;
 typedef struct servent 		servent;
 
+
+/* signatures des méthodes */
+void envoyer();
+void recuperer();
+void supprimer(int socket_descriptor);
+void lister(int socket_descriptor);
+void creerRep(int socket_descriptor);
+void deplacer(int socket_descriptor);
+void afficher_menu();
+int menu();
+int main(int argc, char **argv);
+
 /**
- * procédure pour envoyer un fichier
+ * Procédure appelée pour envoyer un fichier sur le serveur
  */
 void envoyer(int socket_descriptor) {
     char path[50];
@@ -77,39 +89,98 @@ void envoyer(int socket_descriptor) {
 }
 
 /**
- *
+ * Procédure appelée pour réceptionner un fichier du serveur
  */
 void recuperer() {
 
 }
 
 /**
- *
+ * Procédure appelée pour supprimer un fichier ou un répertoire distant
  */
-void supprimer() {
+void supprimer(int socket_descriptor) {
+    char buffer[BUFFER_SIZE];
+    int longueur;
+
+    puts("Quel chemin ?");
+    scanf("%s", buffer);
+    buffer[strlen(buffer)] = '\0';
+    if ((write(socket_descriptor, buffer, strlen(buffer))) < 0) {
+        perror("erreur : impossible d'ecrire le message destine au serveur.");
+        exit(0);
+    }
+    if((longueur = read(socket_descriptor, buffer, sizeof(buffer))) > 0) {
+        printf("reponse du serveur : \n");
+        write(1,buffer,longueur);
+    }
+}
+
+/**
+ * Procédure appelée pour lister les fichiers d'un chemin d'accès distant
+ */
+void lister(int socket_descriptor) {
+    char buffer[BUFFER_SIZE];
+    int longueur;
+
+    puts("Quel chemin ?");
+    scanf("%s", buffer);
+    if(strcmp(buffer, "/") == 0) {
+        puts("Chemin interdit, remplacé par .");//bug si accès à la racine
+        strcpy(buffer, ".");
+    }
+    buffer[strlen(buffer)] = '\0';
+    if ((write(socket_descriptor, buffer, strlen(buffer))) < 0) {
+        perror("erreur : impossible d'ecrire le message destine au serveur.");
+        exit(0);
+    }
+    if((longueur = read(socket_descriptor, buffer, sizeof(buffer))) > 0) {
+        printf("reponse du serveur : \n");
+        write(1,buffer,longueur);
+    }
 
 }
 
 /**
- *
+ * Procédure appelée pour créer un répertoire ou une suite de répertoires sur le serveur
  */
-void lister() {
-    
+void creerRep(int socket_descriptor) {
+    char buffer[BUFFER_SIZE];
+    int longueur;
 
+    puts("Quel chemin ?");
+    scanf("%s", buffer);
+    buffer[strlen(buffer)] = '\0';
+    if ((write(socket_descriptor, buffer, strlen(buffer))) < 0) {
+        perror("erreur : impossible d'ecrire le message destine au serveur.");
+        exit(0);
+    }
+    if((longueur = read(socket_descriptor, buffer, sizeof(buffer))) > 0) {
+        printf("reponse du serveur : \n");
+        write(1,buffer,longueur);
+    }
 }
 
 /**
- *
+ * Procédure appelée pour déplacer un fichier du serveur
  */
-void creerRep() {
+void deplacer(int socket_descriptor) {
+    char buffer[BUFFER_SIZE];
+    int longueur;
+    char temp[PATH_LIMIT];
 
-}
-
-/**
- *
- */
-void deplacer() {
-
+    puts("Indiquer le fichier à déplacer puis, séparé d'un espace, sa destination.");
+    scanf("%s %s", buffer, temp);
+    strcat(buffer, " ");
+    strcat(buffer, temp);
+    buffer[strlen(buffer)] = '\0';
+    if ((write(socket_descriptor, buffer, strlen(buffer))) < 0) {
+        perror("erreur : impossible d'ecrire le message destine au serveur.");
+        exit(0);
+    }
+    if((longueur = read(socket_descriptor, buffer, sizeof(buffer))) > 0) {
+        printf("reponse du serveur : \n");
+        write(1,buffer,longueur);
+    }
 }
 
 /**
@@ -243,47 +314,46 @@ adresse_locale.sin_family = AF_INET; /* ou ptr_host->h_addrtype; */
                 break;
 
             case 3:
-                supprimer();
+                strcpy(buffer, "3\0");
+                if ((write(socket_descriptor, buffer, strlen(buffer))) < 0) {
+                    perror("erreur : impossible d'ecrire le message destine au serveur.");
+                    break;
+                }
+                supprimer(socket_descriptor);
                 break;
 
             case 4:
-                lister();
+                strcpy(buffer, "4\0");
+                if ((write(socket_descriptor, buffer, strlen(buffer))) < 0) {
+                    perror("erreur : impossible d'ecrire le message destine au serveur.");
+                    break;
+                }
+                lister(socket_descriptor);
                 break;
 
             case 5:
-                creerRep();
+                strcpy(buffer, "5\0");
+                if ((write(socket_descriptor, buffer, strlen(buffer))) < 0) {
+                    perror("erreur : impossible d'ecrire le message destine au serveur.");
+                    break;
+                }
+                creerRep(socket_descriptor);
                 break;
 
             case 6:
-                deplacer();
+                strcpy(buffer, "6\0");
+                if ((write(socket_descriptor, buffer, strlen(buffer))) < 0) {
+                    perror("erreur : impossible d'ecrire le message destine au serveur.");
+                    break;
+                }
+                deplacer(socket_descriptor);
                 break;
 
             default:
                 stop = true;
                 break;
         }
-        // printf("\nMessage : ");
-        // mesg[strlen(mesg)] = '\0';
-        // printf("envoi d'un message au serveur. \n");
-        
-        // pour tester, mettre quelque chose ici.
-        strcpy(mesg, "0\0");
-        /* envoi du message vers le serveur */
-        if ((write(socket_descriptor, mesg, strlen(mesg))) < 0) {
-            perror("erreur : impossible d'ecrire le message destine au serveur.");
-            exit(1);
-        }
-
-        // /* mise en attente du prgramme pour simuler un delai de transmission */
-        // sleep(2);
-
-        // printf("message envoye au serveur. \n");
-
-        // /* lecture de la reponse en provenance du serveur */
-        // if((longueur = read(socket_descriptor, buffer, sizeof(buffer))) > 0) {
-        //     printf("reponse du serveur : \n");
-        //     write(1,buffer,longueur);
-        // }
+        memset(buffer, 0, sizeof(buffer));
     }
 
     puts("\nfin de la reception.");
