@@ -41,7 +41,11 @@ void * handler(void *args) {
     char client_buffer[BUFFER_SIZE];
     int status; //statut pour la fonction popen
     char path[PATH_LIMIT];
-
+    char taille_fichier[BUFFER_SIZE];
+    long tf;
+    char * res;
+    FILE* fichier= NULL;
+    int pointeur_fichier;
     printf("Nouveau client : %s\n", adresse_ip);
 
     //Receive command from client
@@ -51,8 +55,32 @@ void * handler(void *args) {
         // client_buffer[longueur] = '\0';
         //traite la commande
         if(strcmp(client_buffer, "1") == 0) { //réception d'un fichier
+            pointeur_fichier = 0;
             printf("\nRéception d'un fichier envoyé par %s\n", adresse_ip);
             memset(client_buffer, 0, sizeof(client_buffer));
+            //lecture du path où enregistrer le fichier
+            read(sock, path, sizeof(path));
+            /*fichier = fopen(path,"wb");
+            fclose(fichier);*/
+            fichier = fopen(path,"ab");
+            //lecture de la taille du fichier enregistrer
+            read(sock, taille_fichier, sizeof(taille_fichier));
+            tf = atoi(taille_fichier);
+            //printf("%s \n",taille_fichier);
+            printf("%d \n",tf);
+            while(pointeur_fichier < tf){
+                
+                read(sock,client_buffer,sizeof(client_buffer));
+                //printf("%s \n",client_buffer);
+                res = client_buffer;
+                pointeur_fichier = pointeur_fichier + strlen(res);
+                printf("%d \n",strlen(res));
+                fwrite(res,1,strlen(res),fichier);
+                memset(res, 0, strlen(res));
+                
+            }
+            //fwrite("test",1,4,fichier);
+            fclose(fichier);
 
         } else if(strcmp(client_buffer, "2") == 0) { //envoi d'un fichier
             printf("\nEnvoi d'un fichier à %s\n", adresse_ip);

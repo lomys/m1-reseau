@@ -12,7 +12,6 @@ client <adresse-serveur> <message-a-transmettre>
 #include <stdbool.h>    /* pour booléens */
 
 #include "constantes.h" //pour nos constantes générales prédéfinies
-#define TAILLE_MAX 10
 
 typedef struct sockaddr 	sockaddr;
 typedef struct sockaddr_in 	sockaddr_in;
@@ -21,7 +20,7 @@ typedef struct servent 		servent;
 
 
 /* signatures des méthodes */
-void envoyer();
+void envoyer(int socket_descriptor);
 void recuperer();
 void supprimer(int socket_descriptor);
 void lister(int socket_descriptor);
@@ -35,54 +34,73 @@ int main(int argc, char **argv);
  * Procédure appelée pour envoyer un fichier sur le serveur
  */
 void envoyer(int socket_descriptor) {
-    char path[50];
-    printf("Entrer le nom du fichier \n");
-    scanf("%s", path);
-    write(socket_descriptor, path, sizeof(path));
-
+    char buffer[BUFFER_SIZE];
+    int longueur;
+    char temp[PATH_LIMIT];
+    //Récupération du path du fichier
+    puts("Indiquer le path du fichier à envoyer.");
+    scanf("%s", buffer);
     FILE* fichier= NULL;
-    fichier = fopen(path,"rb");
+    fichier = fopen(buffer,"rb");
+    buffer[strlen(buffer)] = '\0';
+    memset(buffer,0,sizeof(buffer));
+    //Envoie du path ou sauvegarder le fichier
+    puts("Indiquer le path de destination du fichier envoyé.");
+    scanf("%s", buffer);
+    buffer[strlen(buffer)] = '\0';
+    if ((write(socket_descriptor, buffer, strlen(buffer))) < 0) {
+        perror("erreur : impossible d'ecrire le message destine au serveur.");
+        exit(0);
+    }
+    memset(buffer,0,sizeof(buffer));
+
     char * res ;
-    char chaine[TAILLE_MAX];
     int m,position_actuel;
     int fin = 0;
     if (fichier != NULL){
-         // On lit le fichier tant qu'on ne reçoit pas d'erreur (NULL)        
+         // On lit le fichier tant qu'on ne reçoit pas d'erreur (NULL)
+        fseek(fichier, 0, SEEK_END);
+        m = ftell(fichier);
+        fseek(fichier, 0, SEEK_SET);
+        sprintf(buffer, "%d", m);
+        buffer[strlen(buffer)] = '\0';
+        if ((write(socket_descriptor, buffer, sizeof(buffer))) < 0) {
+            perror("erreur : impossible d'envoyer la taille du fichier.");
+            exit(0);
+        }
+        memset(buffer,0,sizeof(buffer));     
+        printf("position final : %d\n",m);   
         while(fin == 0) 
         {
             position_actuel = ftell(fichier);
-            //printf("position_actuel : %d\n",position_actuel);
-            fseek(fichier, 0, SEEK_END);
-            m = ftell(fichier);
             fseek(fichier, 0, SEEK_SET);
-            
-            if(m - position_actuel > TAILLE_MAX){
-                //printf("%s\n","boucle 1");
+            if(m - position_actuel > BUFFER_SIZE){
                 fseek(fichier,position_actuel,SEEK_CUR);
-                res = malloc((sizeof(char)) * position_actuel+TAILLE_MAX);
-                position_actuel = position_actuel + TAILLE_MAX;
-                //printf("position_actuel : %d\n",position_actuel);
-                //printf("position final : %d\n",m);
-                fread(res, TAILLE_MAX, 1, fichier);
-                printf("affichage : %s\n",res);
-                //printf("pos : %d\n",ftell(fichier));
-
+                res = malloc((sizeof(char)) * BUFFER_SIZE);
+                position_actuel = position_actuel + BUFFER_SIZE;
+                /*printf("position_actuel : %d\n",position_actuel);
+                printf("position final : %d\n",m);
+                printf("BUFFER_SIZE : %d\n",BUFFER_SIZE);*/
+                fread(res, BUFFER_SIZE, 1, fichier);  
+                printf("res : %d\n",strlen(res));         
             }else{
-                //printf("%s\n","boucle 2");
                 fin = 1;         
                 res = malloc((sizeof(char)) * m-position_actuel);
-                //printf("%d\n",m-position_actuel);
                 fseek(fichier, position_actuel, SEEK_CUR);
-                fread(res, m-position_actuel, 1, fichier);
-                //printf("Affichage : %s\n",res);
-                //fwrite(res,1,m-position_actuel,fp);
-                //printf("%s\n","test");                
+                fread(res, m-position_actuel, 1, fichier);      
+                printf("res : %d\n",strlen(res)); 
             }
-            //sleep(2);
-            //op1[m]='/0';
-            //write(socket_descriptor, res, m);
+            
+            res[strlen(res)] = '\0';
+
+            write(socket_descriptor, res, strlen(res));
+            memset(res,0,strlen(res));
         }
         fclose(fichier);
+        /*if((longueur = read(socket_descriptor, buffer, sizeof(buffer))) > 0) {
+            printf("reponse du serveur : \n");
+            write(1,buffer,longueur);
+        }*/
     }else{
         printf("Impossible d'ouvrir le fichier.\n");
     }
@@ -306,10 +324,20 @@ adresse_locale.sin_family = AF_INET; /* ou ptr_host->h_addrtype; */
 
         switch(choix) {
             case 1:
+                strcpy(buffer, "1\0");
+                if ((write(socket_descriptor, buffer, strlen(buffer))) < 0) {
+                    perror("erreur : impossible d'ecrire le message destine au serveur.");
+                    break;
+                }
                 envoyer(socket_descriptor);
                 break;
 
             case 2:
+                strcpy(buffer, "1\0");
+                if ((write(socket_descriptor, buffer, strlen(buffer))) < 0) {
+                    perror("erreur : impossible d'ecrire le message destine au serveur.");
+                    break;
+                }
                 recuperer();
                 break;
 

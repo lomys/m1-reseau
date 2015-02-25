@@ -6,7 +6,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <string.h>
-#define TAILLE_MAX 10
+#define TAILLE_MAX 1024
 
 typedef struct sockaddr 	sockaddr;
 typedef struct sockaddr_in 	sockaddr_in;
