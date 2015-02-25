@@ -205,7 +205,7 @@ int main(int argc, char **argv) {
 
 /* copie caractere par caractere des infos de ptr_host vers adresse_locale */
     bcopy((char*)ptr_host->h_addr, (char*)&adresse_locale.sin_addr, ptr_host->h_length);
-adresse_locale.sin_family = AF_INET; /* ou ptr_host->h_addrtype; */
+    adresse_locale.sin_family = AF_INET; /* ou ptr_host->h_addrtype; */
 
 /* 2 facons de definir le service que l'on va utiliser a distance */
 /* (commenter l'une ou l'autre des solutions) */

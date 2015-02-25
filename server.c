@@ -23,8 +23,8 @@ typedef struct sockaddr_in sockaddr_in;
 typedef struct hostent hostent;
 typedef struct servent servent;
 typedef struct {
-    int * socket_desc;
-    char * adresse_ip;
+    int socket_desc;
+    char adresse_ip[INET_ADDRSTRLEN];
 } thread_params;
 
 /* signatures des méthodes */
@@ -35,8 +35,9 @@ int main(int argc, char **argv); //fonction principale
 
 void * handler(void *args) {
     thread_params * params = args;
-    int sock = *(int *) params->socket_desc;
-    char * adresse_ip = (char *) params->adresse_ip;
+    int sock = params->socket_desc;
+    char adresse_ip[INET_ADDRSTRLEN];
+    memcpy(adresse_ip, params->adresse_ip, strlen(params->adresse_ip)+1);
     int longueur;
     char client_buffer[BUFFER_SIZE];
     int status; //statut pour la fonction popen
@@ -66,7 +67,7 @@ void * handler(void *args) {
             read(sock, path, sizeof(path));
 
             //exécution de la commande
-            char cmd[PATH_LIMIT+7];
+            char cmd[PATH_LIMIT+7];//le chiffre additionné correspond à la commande et ses paramètres (rm -rf )=7 char
             strcpy(cmd, "rm -fr ");
             strcat(cmd, path);
             printf("%s\n", cmd);
@@ -240,6 +241,10 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
+    char ip_serveur[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &adresse_locale.sin_addr, ip_serveur, INET_ADDRSTRLEN);
+    printf("IP serveur (%s) : %s\n", machine, ip_serveur);
+
     /* attente des connexions et traitement des donnees recues */
     longueur_adresse_courante = sizeof(adresse_client_courant);
     while(1) {
@@ -252,11 +257,12 @@ int main(int argc, char **argv) {
 			perror("erreur : impossible d'accepter la connexion avec le client.");
 			exit(1);
 		}
-        //récupération de l'addresse IPv4
+        //récupération de l'adresse IPv4
         inet_ntop(AF_INET, &adresse_client_courant.sin_addr, adresse_ip, INET_ADDRSTRLEN);
         //initialisation des paramètres du thread
-        params.socket_desc = &nouv_socket_descriptor;
-        params.adresse_ip = &adresse_ip[0];
+        memcpy(params.adresse_ip, adresse_ip, strlen(adresse_ip)+1);
+        params.socket_desc = nouv_socket_descriptor;
+        // params.adresse_ip = &adresse_ip[0];
         // les actions du client sont gérées par un code à part : le handler
         if( pthread_create( &client_thread , NULL , handler , (void *) &params) < 0)
         {
