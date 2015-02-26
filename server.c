@@ -23,8 +23,8 @@ typedef struct sockaddr_in sockaddr_in;
 typedef struct hostent hostent;
 typedef struct servent servent;
 typedef struct {
-    int * socket_desc;
-    char * adresse_ip;
+    int socket_desc;
+    char adresse_ip[INET_ADDRSTRLEN];
 } thread_params;
 
 /* signatures des méthodes */
@@ -35,8 +35,9 @@ int main(int argc, char **argv); //fonction principale
 
 void * handler(void *args) {
     thread_params * params = args;
-    int sock = *(int *) params->socket_desc;
-    char * adresse_ip = (char *) params->adresse_ip;
+    int sock = params->socket_desc;
+    char adresse_ip[INET_ADDRSTRLEN];
+    memcpy(adresse_ip, params->adresse_ip, INET_ADDRSTRLEN);
     int longueur;
     char client_buffer[BUFFER_SIZE];
     int status; //statut pour la fonction popen
@@ -172,8 +173,11 @@ void * handler(void *args) {
                 perror("error : impossible de lister les fichiers");
             } else {
                 //lecture du pipe
-                while( fgets(pipe, 10000, fp) != NULL ){
-                    strcat(buffer_pipe, pipe);
+                while( fgets(pipe, BUFFER_SIZE, fp) != NULL ){
+                    //hack pour éviter de dépasser la taille du buffer
+                    if(strlen(client_buffer) + strlen(pipe) < BUFFER_SIZE ) {
+                        strcat(client_buffer, pipe);
+                    }
                 }
                 status = pclose(fp);
                 if(status > 0) {
@@ -183,7 +187,7 @@ void * handler(void *args) {
             }
             
             //envoi du résultat au client
-            write(sock, buffer_pipe, strlen(buffer_pipe));
+            write(sock, client_buffer, sizeof(client_buffer));
 
         } else if(strcmp(client_buffer, "5") == 0) { //mkdir
             printf("\nCréation d'un dossier par %s\n", adresse_ip);
@@ -297,6 +301,9 @@ int main(int argc, char **argv) {
     
     printf("numero de port pour la connexion au serveur : %d \n", 
 		   ntohs(adresse_locale.sin_port) /*ntohs(ptr_service->s_port)*/);
+    char ip_serveur[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &adresse_locale.sin_addr, ip_serveur, INET_ADDRSTRLEN);
+    printf("IP serveur (%s) : %s\n", machine, ip_serveur);
     
     /* creation de la socket */
     if ((socket_descriptor = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -331,8 +338,8 @@ int main(int argc, char **argv) {
         //récupération de l'addresse IPv4
         inet_ntop(AF_INET, &adresse_client_courant.sin_addr, adresse_ip, INET_ADDRSTRLEN);
         //initialisation des paramètres du thread
-        params.socket_desc = &nouv_socket_descriptor;
-        params.adresse_ip = &adresse_ip[0];
+        memcpy(params.adresse_ip, adresse_ip, INET_ADDRSTRLEN);
+        params.socket_desc = nouv_socket_descriptor;
         // les actions du client sont gérées par un code à part : le handler
         if( pthread_create( &client_thread , NULL , handler , (void *) &params) < 0)
         {
