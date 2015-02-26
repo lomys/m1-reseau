@@ -4,7 +4,7 @@
 
  // taille limite de chaque bloc envoyé
  #ifndef BUFFER_SIZE
- #define BUFFER_SIZE 1000
+ #define BUFFER_SIZE 1024
  #endif
 
  //taille limite du chemin d'accès à un fichier
