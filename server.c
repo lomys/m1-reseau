@@ -268,7 +268,6 @@ int main(int argc, char **argv) {
     
     
     gethostname(machine,TAILLE_MAX_NOM);		/* recuperation du nom de la machine */
-    //TODO : get real ip and print it
     
     /* recuperation de la structure d'adresse en utilisant le nom */
     if ((ptr_hote = gethostbyname(machine)) == NULL) {
@@ -302,8 +301,9 @@ int main(int argc, char **argv) {
     
     printf("numero de port pour la connexion au serveur : %d \n", 
 		   ntohs(adresse_locale.sin_port) /*ntohs(ptr_service->s_port)*/);
-    inet_ntop(AF_INET, &adresse_locale.sin_addr, ip_serveur, INET_ADDRSTRLEN);
+    inet_ntop(AF_INET, ptr_hote->h_addr, ip_serveur, INET_ADDRSTRLEN);
     printf("IP serveur (%s) : %s\n", machine, ip_serveur);
+    //TODO : get real ip and print it
     
     /* creation de la socket */
     if ((socket_descriptor = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -322,9 +322,6 @@ int main(int argc, char **argv) {
         perror("erreur : impossible d'écouter sur le socket défini");
         exit(1);
     }
-
-    inet_ntop(AF_INET, &adresse_locale.sin_addr, ip_serveur, INET_ADDRSTRLEN);
-    printf("IP serveur (%s) : %s\n", machine, ip_serveur);
 
     /* attente des connexions et traitement des donnees recues */
     longueur_adresse_courante = sizeof(adresse_client_courant);
