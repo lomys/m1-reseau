@@ -37,14 +37,19 @@ void * handler(void *args) {
     thread_params * params = args;
     int sock = params->socket_desc;
     char adresse_ip[INET_ADDRSTRLEN];
-    memcpy(adresse_ip, params->adresse_ip, strlen(params->adresse_ip)+1);
+    memcpy(adresse_ip, params->adresse_ip, INET_ADDRSTRLEN);
     int longueur;
     char client_buffer[BUFFER_SIZE];
     int status; //statut pour la fonction popen
     char path[PATH_LIMIT];
+    char taille_fichier[BUFFER_SIZE];
+    long tf;
+    char * res;
+    FILE* fichier= NULL;
+    int pointeur_fichier;
 
     printf("Nouveau client : %s\n", adresse_ip);
-
+    printf("%s\n", "En attente.");
     //Receive command from client
     while( (longueur = read(sock, client_buffer, sizeof(client_buffer))) > 0 )
     {
@@ -52,12 +57,81 @@ void * handler(void *args) {
         // client_buffer[longueur] = '\0';
         //traite la commande
         if(strcmp(client_buffer, "1") == 0) { //réception d'un fichier
+            pointeur_fichier = 0;
             printf("\nRéception d'un fichier envoyé par %s\n", adresse_ip);
             memset(client_buffer, 0, sizeof(client_buffer));
+            //lecture du path où enregistrer le fichier
+            read(sock, path, sizeof(path));
+            char cmd[PATH_LIMIT+7];
+            strcpy(cmd, "rm -fr ");
+            strcat(cmd, path);
+            system(cmd);
+            fichier = fopen(path,"ab");
+            //lecture de la taille du fichier enregistrer
+            read(sock, taille_fichier, sizeof(taille_fichier));
+            tf = atoi(taille_fichier);
+            printf("Création %s de taille %d \n",path,tf);
+            while(pointeur_fichier < tf){
+                
+                read(sock,client_buffer,sizeof(client_buffer));
+                //printf("%s \n",client_buffer);
+                res = client_buffer;
+                pointeur_fichier = pointeur_fichier + strlen(res);
+                //printf("%d \n",strlen(res));
+                fwrite(res,1,strlen(res),fichier);
+                memset(res, 0, strlen(res));
+                
+            }
+            fclose(fichier);
+            strcpy(client_buffer, "Fichier envoyé.");            
+            //envoi du résultat au client
+            write(sock, client_buffer, strlen(client_buffer));
 
         } else if(strcmp(client_buffer, "2") == 0) { //envoi d'un fichier
             printf("\nEnvoi d'un fichier à %s\n", adresse_ip);
             memset(client_buffer, 0, sizeof(client_buffer));
+            char buffer[BUFFER_SIZE];
+            //Récupération du path du fichier
+            memset(path,0,sizeof(path));
+            read(sock, path, sizeof(path));
+            int m,position_actuel;
+            int fin = 0;
+            fichier = fopen(path,"rb");
+            if (fichier != NULL){
+                // On lit le fichier tant qu'on ne reçoit pas d'erreur (NULL)
+                fseek(fichier, 0, SEEK_END);
+                m = ftell(fichier);
+                fseek(fichier, 0, SEEK_SET);
+                sprintf(buffer, "%d", m);
+                buffer[strlen(buffer)] = '\0';
+                if ((write(sock, buffer, sizeof(buffer))) < 0) {
+                    perror("erreur : impossible d'envoyer la taille du fichier.");
+                    exit(0);
+                }
+                memset(buffer,0,sizeof(buffer));   
+                while(fin == 0) 
+                {
+                    position_actuel = ftell(fichier);
+                    fseek(fichier, 0, SEEK_SET);
+                    if(m - position_actuel > BUFFER_SIZE){
+                        fseek(fichier,position_actuel,SEEK_CUR);
+                        res = malloc((sizeof(char)) * BUFFER_SIZE);
+                        position_actuel = position_actuel + BUFFER_SIZE;
+                        fread(res, BUFFER_SIZE, 1, fichier);         
+                    }else{
+                        fin = 1;         
+                        res = malloc((sizeof(char)) * m-position_actuel);
+                        fseek(fichier, position_actuel, SEEK_CUR);
+                        fread(res, m-position_actuel, 1, fichier);      
+                    }
+                    res[strlen(res)] = '\0';
+                    write(sock, res, strlen(res));
+                    memset(res,0,strlen(res));
+                }
+                fclose(fichier);
+            }else{
+                printf("Impossible d'ouvrir le fichier.\n");
+            }
 
         } else if(strcmp(client_buffer, "3") == 0) { //rm
             printf("\nSuppression d'un fichier par %s\n", adresse_ip);
@@ -80,15 +154,16 @@ void * handler(void *args) {
         } else if(strcmp(client_buffer, "4") == 0) { //ls
             printf("\nExécution de la commande 'ls' par %s\n", adresse_ip);
             memset(client_buffer, 0, sizeof(client_buffer));
-            
+
             //lecture du path
             read(sock, path, sizeof(path));
-            // printf("path : %s\n", path);
+            //printf("path : %s\n", path);
 
             //exécution de la commande
             FILE * fp;
-            char pipe[BUFFER_SIZE];
-            char cmd[PATH_LIMIT+6];
+            char pipe[10000];
+            char buffer_pipe[10000];
+            char cmd[PATH_LIMIT+7];
             strcpy(cmd, "ls -lh ");
             strcat(cmd, path);
             printf("%s\n", cmd);
@@ -99,17 +174,20 @@ void * handler(void *args) {
             } else {
                 //lecture du pipe
                 while( fgets(pipe, BUFFER_SIZE, fp) != NULL ){
-                    strcat(client_buffer, pipe);
+                    //hack pour éviter de dépasser la taille du buffer
+                    if(strlen(client_buffer) + strlen(pipe) < BUFFER_SIZE ) {
+                        strcat(client_buffer, pipe);
+                    }
                 }
                 status = pclose(fp);
                 if(status > 0) {
-                    strcpy(client_buffer, "error : impossible de lister les fichiers\0");
+                    strcpy(buffer_pipe, "error : impossible de lister les fichiers\0");
                     perror("error : impossible de lister les fichiers");
                 }
             }
             
             //envoi du résultat au client
-            write(sock, client_buffer, strlen(client_buffer));
+            write(sock, client_buffer, sizeof(client_buffer));
 
         } else if(strcmp(client_buffer, "5") == 0) { //mkdir
             printf("\nCréation d'un dossier par %s\n", adresse_ip);
@@ -154,6 +232,7 @@ void * handler(void *args) {
         //clear the message buffer
         memset(client_buffer, 0, sizeof(client_buffer));
         memset(path, 0, sizeof(path));
+        printf("%s\n", "En attente.");
     }
 
     if(longueur == 0)
@@ -222,6 +301,9 @@ int main(int argc, char **argv) {
     
     printf("numero de port pour la connexion au serveur : %d \n", 
 		   ntohs(adresse_locale.sin_port) /*ntohs(ptr_service->s_port)*/);
+    char ip_serveur[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &adresse_locale.sin_addr, ip_serveur, INET_ADDRSTRLEN);
+    printf("IP serveur (%s) : %s\n", machine, ip_serveur);
     
     /* creation de la socket */
     if ((socket_descriptor = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -260,9 +342,8 @@ int main(int argc, char **argv) {
         //récupération de l'adresse IPv4
         inet_ntop(AF_INET, &adresse_client_courant.sin_addr, adresse_ip, INET_ADDRSTRLEN);
         //initialisation des paramètres du thread
-        memcpy(params.adresse_ip, adresse_ip, strlen(adresse_ip)+1);
+        memcpy(params.adresse_ip, adresse_ip, INET_ADDRSTRLEN);
         params.socket_desc = nouv_socket_descriptor;
-        // params.adresse_ip = &adresse_ip[0];
         // les actions du client sont gérées par un code à part : le handler
         if( pthread_create( &client_thread , NULL , handler , (void *) &params) < 0)
         {
