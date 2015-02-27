@@ -70,7 +70,7 @@ void * handler(void *args) {
             //lecture de la taille du fichier enregistrer
             read(sock, taille_fichier, sizeof(taille_fichier));
             tf = atoi(taille_fichier);
-            printf("Création %s de taille %d \n",path,tf);
+            printf("Création %s de taille %ld \n",path,tf);
             while(pointeur_fichier < tf){
                 
                 read(sock,client_buffer,sizeof(client_buffer));
@@ -264,6 +264,7 @@ int main(int argc, char **argv) {
     pthread_t client_thread;            //thread créé pour un client
     thread_params params;               //paramètres du thread
     char adresse_ip[INET_ADDRSTRLEN];   //adresse ip du client
+    char ip_serveur[INET_ADDRSTRLEN];   //adresse ip du serveur
     
     
     gethostname(machine,TAILLE_MAX_NOM);		/* recuperation du nom de la machine */
@@ -301,7 +302,6 @@ int main(int argc, char **argv) {
     
     printf("numero de port pour la connexion au serveur : %d \n", 
 		   ntohs(adresse_locale.sin_port) /*ntohs(ptr_service->s_port)*/);
-    char ip_serveur[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &adresse_locale.sin_addr, ip_serveur, INET_ADDRSTRLEN);
     printf("IP serveur (%s) : %s\n", machine, ip_serveur);
     
@@ -323,7 +323,6 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
-    char ip_serveur[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &adresse_locale.sin_addr, ip_serveur, INET_ADDRSTRLEN);
     printf("IP serveur (%s) : %s\n", machine, ip_serveur);
 
